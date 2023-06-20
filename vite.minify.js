@@ -10,7 +10,7 @@ import { readdirSync } from "fs";
 		console.log(file);
 	}
     	await build({entryPoints: files.map((file) => `./dist/${file.name}`),format:'esm',outdir:'dist',allowOverwrite: true,
-						minify: true,
+						minify: true,bundle:true,
 						treeShaking: true,
 						minifySyntax: true,
 						keepNames: true,

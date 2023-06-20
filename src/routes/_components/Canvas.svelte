@@ -1,18 +1,56 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount } from "svelte";
 
+	/**
+	 * @type {HTMLCanvasElement}
+	 */
 	let canvas;
+	/**
+	 * @type {CanvasRenderingContext2D | null}
+	 */
 	let context;
 	let drawing;
 	let startPos = {};
 	let isDrawing = false;
-	onMount(() => {
+
+	const debounce = (
+		/** @type {TimerHandler} */ cb,
+		/** @type {number | undefined} */ duration,
+	) => {
+		/**
+		 * @type {number | undefined}
+		 */
+		let timer;
+		return () => {
+			if (timer) clearTimeout(timer);
+			timer = setTimeout(cb, duration);
+		};
+	};
+	let size = 0;
+
+	const resize = debounce(() => {
 		if (canvas) {
-			context = canvas.getContext('2d');
-			context.lineWidth = 3;
-			canvas.width = window.innerWidth / 1.125;
-			canvas.height = window.innerHeight / 2.5;
+			canvas.width = canvas.clientWidth;
+			canvas.height = canvas.clientHeight;
 		}
+	}, 300);
+
+	onMount(() => {
+		const RO = new ResizeObserver(resize);
+		if (canvas) {
+			RO.observe(canvas);
+			context = canvas.getContext("2d");
+			if (context) {
+				context.lineWidth = 3;
+				canvas.width = canvas.clientWidth;
+				canvas.height = canvas.clientHeight;
+			}
+		}
+		return () => {
+			if (canvas) {
+				RO.disconnect();
+			}
+		};
 	});
 
 	function draw({ offsetX: x1, offsetY: y1 }) {
@@ -21,13 +59,14 @@
 		if (!isDrawing) return;
 
 		const { x, y } = startPos;
-		context.beginPath();
-		context.moveTo(x, y);
-		context.lineTo(x1, y1);
-		context.closePath();
-		context.stroke();
-
-		startPos = { x: x1, y: y1 };
+		if (context) {
+			context.beginPath();
+			context.moveTo(x, y);
+			context.lineTo(x1, y1);
+			context.closePath();
+			context.stroke();
+			startPos = { x: x1, y: y1 };
+		}
 	}
 
 	function start({ offsetX: x, offsetY: y }) {
@@ -37,28 +76,30 @@
 	function end() {
 		isDrawing = false;
 	}
-	const debounce = (cb, duration) => {
-		let timer;
-		return () => {
-			if (timer) clearTimeout(timer);
-			timer = setTimeout(cb, duration);
-		};
-	};
-
-	const resize = debounce(() => {
-		if (canvas) {
-			canvas.width = window.innerWidth / 1.125;
-			canvas.height = window.innerHeight / 2.5;
-		}
-	}, 300);
 </script>
 
-<svelte:window on:resize={resize} on:mouseup={end} on:mousemove={draw} />
+<svelte:window on:resize={resize} on:mouseup={end} />
 <!-- your markup here -->
-<canvas bind:this={canvas} on:mousedown={start} />
+<canvas
+	bind:this={canvas}
+	on:mousemove={draw}
+	on:mousedown={start}
+	class="mb-4"
+/>
+<button
+	type="button"
+	class="btn hover:variant-soft bg-error-700 self-end"
+	on:click={() => {
+		if (context) {
+			context.clearRect(0, 0, canvas.width, canvas.height);
+		}
+	}}>Clear Drawing Canvas</button
+>
 
 <style>
 	canvas {
 		background-color: #eee;
+		width: 100%;
+		aspect-ratio: 16/9;
 	}
 </style>

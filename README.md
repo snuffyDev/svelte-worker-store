@@ -2,6 +2,8 @@
 
 :zap: Turbocharge your app with multithreaded Svelte Stores.
 
+Demo/Documentation Site: https://svelte-worker-store.vercel.app/
+
 > What is this?
 
 `svelte-worker-store` is a small set of Svelte stores that enable you to use Web Workers to process things off the main thread.
@@ -23,14 +25,11 @@ Based on another library of mine ([nanothreads](https://www.npmjs.com/package/na
 
 ## Usage/Examples
 
-Create a 'channel'
+### Create a 'channel'
 
 ```svelte
 <script>
-	import { channel } from "svelte-worker-store";
-
-	const add = (a, b) => a + b;
-
+	// TODO: more examples
 	// Creates a store with a single worker
 	// and limits concurrent calls to 2.
 	const store = channel(add, 2);
@@ -42,4 +41,6 @@ Create a 'channel'
 <button on:click={handleClick}>Add numbers</button>
 ```
 
-// TODO: more examples
+### Julia Set
+
+https://svelte-worker-store.vercel.app/demos/julia-set
