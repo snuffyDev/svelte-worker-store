@@ -12,14 +12,14 @@ specifiers:
   eslint: ^8.28.0
   eslint-config-prettier: ^8.5.0
   eslint-plugin-svelte: ^2.26.0
+  highlight.js: ^11.8.0
   nanothreads: ^0.3.7
-  postcss: ^8.4.23
-  postcss-load-config: ^4.0.1
   prettier: ^2.8.0
   prettier-plugin-svelte: ^2.8.1
   publint: ^0.1.9
   svelte: ^3.54.0
   svelte-check: ^3.0.1
+  svelte-highlight: ^7.3.0
   svelte-preprocess: ^5.0.3
   tailwindcss: ^3.3.1
   tslib: ^2.4.1
@@ -38,15 +38,15 @@ devDependencies:
   eslint: 8.42.0
   eslint-config-prettier: 8.8.0_eslint@8.42.0
   eslint-plugin-svelte: 2.30.0_3vji2slnup2yzxo42w6sbds3sy
+  highlight.js: 11.8.0
   nanothreads: 0.3.7
-  postcss: 8.4.24
-  postcss-load-config: 4.0.1_postcss@8.4.24
   prettier: 2.8.8
   prettier-plugin-svelte: 2.10.1_blbg2s7pis747igzn3ilcyh5ou
   publint: 0.1.12
   svelte: 3.59.1
-  svelte-check: 3.4.3_sxhny56dlbcmwov4vk7qwrzshi
-  svelte-preprocess: 5.0.4_4klotfyqh3bzvqmua74kcysa7a
+  svelte-check: 3.4.3_owwrqxqyw2b26jd4x7iiapyxoq
+  svelte-highlight: 7.3.0
+  svelte-preprocess: 5.0.4_jissygmktegc5gmmkgli52p73q
   tailwindcss: 3.3.2
   tslib: 2.5.3
   typescript: 5.1.3
@@ -1478,6 +1478,11 @@ packages:
       function-bind: 1.1.1
     dev: true
 
+  /highlight.js/11.8.0:
+    resolution: {integrity: sha512-MedQhoqVdr0U6SSnWPzfiadUcDHfN/Wzq25AkXiQv9oiOO/sG0S7XkvpFIqWBl9Yq1UYyYOOVORs5UW2XlPyzg==}
+    engines: {node: '>=12.0.0'}
+    dev: true
+
   /ignore-walk/5.0.1:
     resolution: {integrity: sha512-yemi4pMf51WKT7khInJqAvsIGzoqYXblnsz0ql8tM+yi1EKYTY1evX4NAbJrLL/Aanr2HyZeluqU+Oi7MGHokw==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
@@ -2187,7 +2192,7 @@ packages:
     engines: {node: '>= 0.4'}
     dev: true
 
-  /svelte-check/3.4.3_sxhny56dlbcmwov4vk7qwrzshi:
+  /svelte-check/3.4.3_owwrqxqyw2b26jd4x7iiapyxoq:
     resolution: {integrity: sha512-O07soQFY3X0VDt+bcGc6D5naz0cLtjwnmNP9JsEBPVyMemFEqUhL2OdLqvkl5H/u8Jwm50EiAU4BPRn5iin/kg==}
     hasBin: true
     peerDependencies:
@@ -2200,7 +2205,7 @@ packages:
       picocolors: 1.0.0
       sade: 1.8.1
       svelte: 3.59.1
-      svelte-preprocess: 5.0.4_4klotfyqh3bzvqmua74kcysa7a
+      svelte-preprocess: 5.0.4_jissygmktegc5gmmkgli52p73q
       typescript: 5.1.3
     transitivePeerDependencies:
       - '@babel/core'
@@ -2229,6 +2234,12 @@ packages:
       svelte: 3.59.1
     dev: true
 
+  /svelte-highlight/7.3.0:
+    resolution: {integrity: sha512-59oE9/xOFXAdT97qXIt6HMlzL2f+0YNQ+BArzRONwCW96ElxX7TGme1kU5s3tsk1D88G5dhBixcP1chOGOkVsg==}
+    dependencies:
+      highlight.js: 11.8.0
+    dev: true
+
   /svelte-hmr/0.15.2_svelte@3.59.1:
     resolution: {integrity: sha512-q/bAruCvFLwvNbeE1x3n37TYFb3mTBJ6TrCq6p2CoFbSTNhDE9oAtEfpy+wmc9So8AG0Tja+X0/mJzX9tSfvIg==}
     engines: {node: ^12.20 || ^14.13.1 || >= 16}
@@ -2238,7 +2249,7 @@ packages:
       svelte: 3.59.1
     dev: true
 
-  /svelte-preprocess/5.0.4_4klotfyqh3bzvqmua74kcysa7a:
+  /svelte-preprocess/5.0.4_jissygmktegc5gmmkgli52p73q:
     resolution: {integrity: sha512-ABia2QegosxOGsVlsSBJvoWeXy1wUKSfF7SWJdTjLAbx/Y3SrVevvvbFNQqrSJw89+lNSsM58SipmZJ5SRi5iw==}
     engines: {node: '>= 14.10.0'}
     requiresBuild: true
@@ -2280,7 +2291,6 @@ packages:
       detect-indent: 6.1.0
       magic-string: 0.27.0
       postcss: 8.4.24
-      postcss-load-config: 4.0.1_postcss@8.4.24
       sorcery: 0.11.0
       strip-indent: 3.0.0
       svelte: 3.59.1

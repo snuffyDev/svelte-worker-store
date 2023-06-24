@@ -15,6 +15,7 @@ Based on another library of mine ([nanothreads](https://www.npmjs.com/package/na
 - Simple and easy to use :100:
 - Handle resource-heavy workloads without blocking your app! :sunglasses:
 - Tiny bundle size :shipit:
+- `derived`, `pooled` and `channel` stores
 
 ## Installation
 

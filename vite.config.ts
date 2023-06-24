@@ -11,9 +11,12 @@ export default defineConfig({
 		minifySyntax: true,
 		keepNames: true,
 	},
+	optimizeDeps: {
+		exclude: ["./src/routes/demos/julia-set/juliaSet.js"],
+		esbuildOptions: {},
+	},
 	build: {
 		minify: true,
-
 
 		rollupOptions: { output: { compact: true }, treeshake: "smallest" },
 	},

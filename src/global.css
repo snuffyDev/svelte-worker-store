@@ -20,6 +20,7 @@
 html {
 	overflow-y: auto;
 }
+
 html,
 body {
 	background-color: var(--sk-back-3);

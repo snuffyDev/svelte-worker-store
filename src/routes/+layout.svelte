@@ -15,7 +15,7 @@
 <svelte:head>
 	<title>svelte-worker-store</title>
 </svelte:head>
-<AppBar>
+<AppBar background="bg-surface-500">
 	<svelte:fragment slot="lead">
 		{#if $page.url.pathname !== "/"}
 			<a href="/" class="btn variant-ghost-surface"
@@ -25,7 +25,12 @@
 		{/if}
 	</svelte:fragment>
 	svelte-worker-store{$page.url.pathname !== "/" ? $page.url.pathname : ""}
+
+	<svelte:fragment slot="trail">
+		<a href="/#demos"> Demos </a>
+		<a href="/docs"> Documentation </a>
+	</svelte:fragment>
 </AppBar>
-<main class="p-8 max-w-[81rem] mx-auto w-full">
+<main class="px-8 pb-8 max-w-[81rem] mx-auto w-full min-h-full overflow-y-auto">
 	<slot />
 </main>

@@ -1,5 +1,15 @@
-import { writable } from "svelte/store";
-import { InlineThread, Thread, type ThreadArgs, ThreadPool, type WorkerThreadFn } from "nanothreads";
+import {
+	writable,
+	derived as internalDerived,
+	type Writable,
+} from "svelte/store";
+import {
+	InlineThread,
+	Thread,
+	type ThreadArgs,
+	ThreadPool,
+	type WorkerThreadFn,
+} from "nanothreads";
 
 export { workerInit } from "nanothreads";
 
@@ -7,17 +17,20 @@ type Unsubscriber = () => void;
 type Subscriber<T> = (value: T) => Unsubscriber | void;
 type WorkerScript = string | URL;
 
-
 type ScriptOrHandler<Arguments = void, T = void> = Arguments extends void
-? WorkerScript
-: WorkerThreadFn<Arguments, T>;
+	? WorkerScript
+	: WorkerThreadFn<Arguments, T>;
 
-export type { ThreadArgs as ExecutorArgs,ScriptOrHandler as WorkerOrExecutor, WorkerScript };
+export type {
+	ThreadArgs as ExecutorArgs,
+	ScriptOrHandler as WorkerOrExecutor,
+	WorkerScript,
+};
 
 const SETTER = Symbol("[[Setter]]");
 
 /**
- * Returns a communication channel for a worker thread or inline function.
+ * A basic store which updates it's value based on the returned output from the provided Handler,
  *
  * @template Arguments - The types of arguments the worker function receives.
  * @template Result - The type of result returned by the worker function.
@@ -34,10 +47,12 @@ const SETTER = Symbol("[[Setter]]");
  * ```
  */
 export const channel = <Arguments extends never[], Result = void>(
-	workerOrExecutor: ScriptOrHandler<Arguments, Result> | URL,
+	workerOrExecutor: ScriptOrHandler<Arguments, Result> | string | URL,
 	max = 1,
 ) => {
 	let value: Result;
+	let state: "open" | "closed" = "open";
+
 	const isInlineWorker = typeof workerOrExecutor === "function";
 
 	const WorkerConstructor = isInlineWorker ? InlineThread : Thread;
@@ -46,7 +61,7 @@ export const channel = <Arguments extends never[], Result = void>(
 		workerOrExecutor as never,
 		{
 			maxConcurrency: max,
-			...(isInlineWorker && { type: "module" }),
+			type: "module",
 		},
 	);
 
@@ -55,6 +70,9 @@ export const channel = <Arguments extends never[], Result = void>(
 	 * @param {Subscriber<Result>} callback - The function to call when new results are available.
 	 */
 	const subscribe = (callback: Subscriber<Result>): Unsubscriber => {
+		if (state === "closed")
+			throw Error("Cannot subscribe to a disposed worker store.");
+
 		const unsubscribe = (
 			thread.onMessage.bind(thread) as (typeof thread)["onMessage"]
 		)((result) => {
@@ -68,20 +86,21 @@ export const channel = <Arguments extends never[], Result = void>(
 
 	/**
 	 * Sends data to the worker thread.
-	 * @param {...value: [...args: Arguments[]]} - The data to send to the worker.
+	 * @param {...value: Arguments} - The data to send to the worker.
 	 * @returns {Promise<Result>} - A promise that resolves with the result from the worker.
 	 */
-	const send = (...args: Arguments): Result | Promise<Result> =>
-		thread.send(args);
+	const send = (...args: Arguments) => {
+		if (state === "closed")
+			throw Error("Cannot call 'send' on a disposed worker store.");
+		return thread.send(args);
+	};
 
 	/**
 	 * Set value and inform subscribers.
-	 * @param value to set
+	 * @alias
+	 * @see {@linkplain send}
 	 */
-	const set =
-		() =>
-		(...value: Arguments) =>
-			send(...value);
+	const set = (...value: Arguments) => send(...value);
 
 	return {
 		subscribe,
@@ -91,29 +110,83 @@ export const channel = <Arguments extends never[], Result = void>(
 		[SETTER]: (to: never) => {
 			value = to;
 		},
-	};
+		/**
+		 * Terminates the worker thread permanently
+		 */
+		dispose() {
+			state = "closed";
+
+			return thread.terminate();
+		},
+	} as const;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// const derived = <Arguments extends never[], Result>(
-// 	store: Writable<Result>,
-// 	workerOrExecutor: ScriptOrHandler<Arguments, Result>,
-// ) => {
-// 	const wrappedStore = channel<Arguments, Result>(workerOrExecutor, 1);
-// 	store.subscribe((result) => {
-// 		wrappedStore[SETTER](result);
-// 	})();
+/**
+ * Creates a channel that sends the output a store and applies an aggregation function over its input value;
+ *
+ * @template Arguments
+ * @template Result
+ * @param store = the store to derive from
+ * @param workerOrExecutor - a URL, string, or inline function
+ * @param [initial_value] - default value
+ */
+export const derived = <Arguments extends never[], Result = unknown>(
+	store: Writable<Arguments>,
+	workerOrExecutor: string | URL | ScriptOrHandler<Arguments, Result>,
+	initial_value?: Result,
+) => {
+	const subscribers = new Set<Subscriber<Result>>();
+	const makeChannel = () => channel<Arguments, Result>(workerOrExecutor, 1);
 
-// 	return {
-// 		...wrappedStore,
-// 		send(...value: Arguments extends never[] ? Arguments : [Arguments]): Promise<Result> {
-// 			return wrappedStore.send(...value).then((value) => {
-// 				store.set(value);
-// 				return value;
-// 			});
-// 		},
-// 	};
-// }
+	let wrappedStore: ReturnType<typeof makeChannel> | null = makeChannel();
+	let currentValue: Result = initial_value as Result;
+
+	let state: "closed" | "open" = "open";
+
+	const _internal_ = internalDerived<typeof store, Result>(
+		store,
+		(args, set) => {
+			const isArray = Array.isArray(args);
+			const normalizedArgs = isArray ? args : ([args] as Arguments);
+			if (wrappedStore)
+				wrappedStore.send(...normalizedArgs).then((value) => {
+					currentValue = value;
+					set(currentValue);
+				});
+		},
+		initial_value,
+	);
+
+	/**
+	 * Terminates the worker thread
+	 */
+	const dispose = () => {
+		state = "closed";
+		if (wrappedStore) wrappedStore.dispose();
+		subscribers.forEach((cb) => cb(currentValue));
+		subscribers.clear();
+	};
+
+	return {
+		subscribe: (...args: Parameters<(typeof _internal_)["subscribe"]>) => {
+			if (state === "closed")
+				throw Error("Cannot subscribe to a disposed worker store.");
+
+			if (!wrappedStore) wrappedStore = makeChannel();
+
+			const unsub = _internal_["subscribe"](...args);
+			subscribers.add(unsub);
+			args[0](initial_value as never);
+			return () => {
+				subscribers.delete(unsub);
+				if (subscribers.size === 0) {
+					dispose();
+				}
+			};
+		},
+		dispose,
+	} as const;
+};
 
 class ThreadPoolStore<Arguments, Result> extends ThreadPool<Arguments, Result> {
 	private store = writable<Record<number, Result>>({});
@@ -174,7 +247,7 @@ class ThreadPoolStore<Arguments, Result> extends ThreadPool<Arguments, Result> {
  * ```
  */
 export const pooled = <Arguments = never[], Result = void>(
-	workerOrExecutor: ScriptOrHandler<Arguments, Result> | URL,
+	workerOrExecutor: string | ScriptOrHandler<Arguments, Result> | URL,
 	{ count = 1, maxConcurrency = 1 }: { count: number; maxConcurrency: number },
 ) => {
 	const task: string | ScriptOrHandler<Arguments, Result> =
@@ -194,5 +267,6 @@ export const pooled = <Arguments = never[], Result = void>(
 		 */
 		send: pool.exec.bind(pool),
 		subscribe: pool.subscribe,
+		dispose: pool.terminate.bind(pool),
 	};
 };

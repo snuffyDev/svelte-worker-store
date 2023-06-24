@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 
-import { workerInit } from "../../../lib/index";
+import { workerInit } from "../../../lib/index.js";
 
 /**
  * @param {number} value
@@ -40,7 +40,7 @@ class Complex {
     }
 }
 
-const MAX_ITERATIONS = 10000;
+const MAX_ITERATIONS = 20000;
 const c = new Complex(-0.8, 0.156); // for Julia set
 
 // Color palette
@@ -126,5 +126,5 @@ export async function generateJuliaSet(width, height) {
 }
 
 // eslint-disable-next-line no-undef
-workerInit(globalThis, async (/** @type {[width: number, height: number]} args */ ...args  ) => await generateJuliaSet(...args));
-export {};
+export default workerInit(globalThis, async (/** @type {[width: number, height: number]} args */ ...args  ) => await generateJuliaSet(...args));
+
